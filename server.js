@@ -53,16 +53,16 @@ app.use(
 // Registration
 app.post("/sign-up", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     // Check if the username is already taken
-    const existing = await User.findOne({ username });
+    const existing = await User.findOne({ email });
 
     if (existing) {
       return res.status(400).send({ message: "Username already taken." });
     }
     // Create a new user
-    const user = new User({ username, password });
+    const user = new User({ email, password });
     await user.save();
 
     res.status(201).send({ message: "User registered successfully." });
@@ -74,15 +74,15 @@ app.post("/sign-up", async (req, res) => {
 // Login
 app.post("/sign-in", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).send({ message: "Authentication failed" });
     }
 
     // Set user information in session
-    req.session.user = { id: user._id, username: user.username };
+    req.session.user = { id: user._id, email: user.email };
     res.status(200).send({ message: "Logged in successfully" }); // Set-Cookie header will be sent with the response
   } catch (error) {
     console.log(error);
@@ -105,6 +105,37 @@ app.post("/logout", (req, res) => {
     });
   } else {
     res.status(400).send({ message: "You are not logged in" });
+  }
+});
+
+// Get all users
+app.get("/users", isAuthenticated, async (req, res) => {
+  const page = req.query.page || 0;
+  const perPage = req.query.perPage || 10;
+
+  try {
+    const users = await User.find();
+    res.status(200).json({
+        users: users.slice(page * perPage, page * perPage + perPage),
+        total: users.length,
+        page,
+        perPage,
+        totalPages: Math.ceil(users.length / perPage),
+    });
+  } catch (error) {
+    res.status(500).send
+    }
+});
+
+app.get("/user/:id", isAuthenticated, async (req, res)=>{
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+    return res.status(200).json(user)
+  } catch (error){
+    res.status(500).send(error)
   }
 });
 

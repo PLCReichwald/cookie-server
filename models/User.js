@@ -2,9 +2,17 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
+  coursePlanId: String,
+  firstname: String,
+  lastname: String,
+  email: { type: String, unique: true, required: true },
   password: { type: String, required: true },
-  role: { type: String, default: "user" },
+  role: String,
+  agb: Boolean,
+  newsletter: Boolean,
+  settings: { type: mongoose.Schema.Types.ObjectId, ref: 'Settings' },
+  coursePlans: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CoursePlan' }],
+  orders: [{ type: mongoose.Schema.Types.ObjectId, ref: 'OrderWorld' }],
 });
 
 userSchema.pre("save", async function (next) {
